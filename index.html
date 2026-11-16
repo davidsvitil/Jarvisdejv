@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>R125 Dash</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="R125">
+<meta name="theme-color" content="#000000">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;background:#000;color:#fff;font-family:-apple-system,"SF Pro Display","Helvetica Neue",Arial,sans-serif;overflow:hidden}
+body{display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+:root{--acc:#2f7bff;--dim:#8a8f98;--card:#14161a;--line:#262a31;--ok:#28c76f;--warn:#ffb020;--bad:#ff4d4d}
+input,textarea{-webkit-user-select:text;user-select:text}
+button{font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-weight:600}
+button:active{background:#232830}
+button.pri{background:var(--acc);border-color:var(--acc)}
+button.sm{padding:8px 12px;font-size:14px;border-radius:10px}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.dim{color:var(--dim)}
+#top{display:flex;justify-content:space-between;align-items:center;padding:6px 14px;font-size:15px;font-weight:600;flex:none}
+#gps{display:flex;align-items:center}
+#gps i{width:9px;height:9px;border-radius:50%;background:var(--bad);margin-right:6px;display:inline-block}
+#views{flex:1;position:relative;min-height:0}
+.view{position:absolute;top:0;left:0;right:0;bottom:0;display:none;flex-direction:column;overflow:hidden}
+.view.on{display:flex}
+#tabs{display:flex;flex:none;border-top:1px solid var(--line)}
+#tabs button{flex:1;border:0;border-radius:0;background:#000;padding:14px 0;font-size:13px;letter-spacing:.08em;color:var(--dim)}
+#tabs button.on{color:#fff;box-shadow:inset 0 3px 0 var(--acc)}
+/* JIZDA */
+#speedBox{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0}
+#speed{font-size:min(46vw,34vh);font-weight:700;line-height:.9;letter-spacing:-.03em}
+#speedU{font-size:18px;color:var(--dim);letter-spacing:.2em;margin-top:4px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:8px 12px;flex:none}
+.cell{background:var(--card);border-radius:12px;padding:8px 10px;text-align:center}
+.cell b{display:block;font-size:22px}
+.cell span{font-size:11px;color:var(--dim);letter-spacing:.08em}
+.row{display:flex;gap:8px;padding:0 12px 10px;flex:none}
+.row button{flex:1;font-size:17px;min-width:0}
+.row button.sm{font-size:14px;padding:8px 4px}
+/* MAPA */
+#map{flex:1;background:#111;min-height:0}
+#navBar{flex:none;padding:8px 10px;display:flex;gap:8px;align-items:center}
+#navBar input{flex:1;min-width:0;font:inherit;font-size:16px;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:#fff}
+#navRes{position:absolute;top:58px;left:10px;right:10px;z-index:1000;background:#1b1e24;border-radius:12px;max-height:55%;overflow:auto;display:none}
+#navRes div{padding:13px 14px;border-bottom:1px solid var(--line);font-size:15px}
+#navInfo{flex:none;display:none;align-items:center;padding:8px 10px;gap:10px;background:var(--card)}
+#navArrow{font-size:40px;width:52px;text-align:center;flex:none}
+#navTxt{flex:1;min-width:0}
+#navTxt b{font-size:22px;display:block}
+#navTxt span{font-size:14px;color:var(--dim);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#navSpeed{position:absolute;left:10px;bottom:10px;z-index:900;background:rgba(0,0,0,.8);border-radius:14px;padding:6px 14px;font-size:38px;font-weight:700}
+#navSpeed small{font-size:12px;color:var(--dim);margin-left:4px}
+.me{width:22px;height:22px;border-radius:50%;background:var(--acc);border:3px solid #fff;box-shadow:0 0 8px rgba(47,123,255,.9)}
+/* VYKON */
+#perf{overflow-y:auto;-webkit-overflow-scrolling:touch}
+#perfTop{display:flex;flex:none;padding:6px 12px;gap:8px}
+#perfTop>div{flex:1;background:var(--card);border-radius:14px;padding:8px;text-align:center;position:relative}
+#perfTop canvas{width:100%;display:block}
+.cap{font-size:11px;color:var(--dim);letter-spacing:.08em}
+#leanVal{font-size:34px;font-weight:700}
+#timer{padding:6px 12px;flex:none}
+#timerBox{background:var(--card);border-radius:14px;padding:10px 12px}
+#tState{font-size:15px;font-weight:600;margin-bottom:6px}
+.tr{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-top:1px solid var(--line);font-size:15px}
+.tr b{font-size:22px}
+.tr small{color:var(--dim);margin-left:8px}
+/* SERVIS */
+#svc{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 12px 20px}
+#odoBox{background:var(--card);border-radius:14px;padding:12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+#odo{font-size:30px;font-weight:700}
+h3{font-size:12px;letter-spacing:.12em;color:var(--dim);margin:16px 4px 8px;font-weight:600}
+.it{background:var(--card);border-radius:14px;padding:10px 12px;margin-bottom:8px}
+.it .h{display:flex;justify-content:space-between;align-items:center;font-weight:600}
+.it .s{font-size:13px;color:var(--dim);margin:4px 0 8px}
+.bar{height:6px;border-radius:3px;background:#262a31;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok)}
+.it .b{display:flex;gap:8px;margin-top:10px}
+.ride{display:flex;justify-content:space-between;padding:9px 4px;border-bottom:1px solid var(--line);font-size:14px}
+/* START */
+#start{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:5000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+#start h1{font-size:40px;margin:0 0 6px;letter-spacing:.02em}
+#start p{color:var(--dim);font-size:15px;line-height:1.45;max-width:420px}
+#start button{font-size:22px;padding:18px 48px;margin-top:14px}
+#toast{position:fixed;left:50%;top:44px;transform:translateX(-50%);background:#fff;color:#000;padding:10px 16px;border-radius:12px;font-weight:600;font-size:15px;z-index:6000;display:none;max-width:90%;text-align:center}
+@media (orientation:landscape){
+  body{flex-direction:row;flex-wrap:wrap}
+  #top{width:100%;padding:3px 14px;font-size:13px}
+  #tabs{order:1;flex-direction:column;border-top:0;border-right:1px solid var(--line);width:74px;height:calc(100% - 26px)}
+  #tabs button{font-size:11px;padding:0}
+  #tabs button.on{box-shadow:inset 3px 0 0 var(--acc)}
+  #views{order:2;height:calc(100% - 26px)}
+  #drive{flex-direction:row;flex-wrap:wrap;align-content:stretch}
+  #speedBox{width:56%;flex:none;height:100%}
+  #speed{font-size:min(30vw,62vh)}
+  #driveSide{width:44%;display:flex;flex-direction:column;justify-content:center}
+  .grid{grid-template-columns:repeat(2,1fr)}
+  #perf{flex-direction:row;flex-wrap:wrap}
+  #perfTop{width:56%}
+  #timer{width:44%;padding-left:0}
+}
+</style>
+</head>
+<body>
+<div id="top"><span id="clock" class="num">--:--</span><span id="hdg" class="dim"></span><span id="gps"><i></i><span id="gpsT">GPS</span></span></div>
+
+<div id="views">
+  <!-- JÍZDA -->
+  <div class="view on" id="drive">
+    <div id="speedBox"><div id="speed" class="num">0</div><div id="speedU">KM/H</div></div>
+    <div id="driveSide">
+      <div class="grid">
+        <div class="cell"><b id="dTrip" class="num">0.0</b><span>TRIP KM</span></div>
+        <div class="cell"><b id="dTime" class="num">0:00</b><span>ČAS JÍZDY</span></div>
+        <div class="cell"><b id="dMax" class="num">0</b><span>MAX</span></div>
+        <div class="cell"><b id="dAvg" class="num">0</b><span>PRŮMĚR</span></div>
+        <div class="cell"><b id="dAlt" class="num">–</b><span>VÝŠKA M</span></div>
+        <div class="cell"><b id="dLean" class="num">–</b><span>NÁKLON</span></div>
+      </div>
+      <div class="row">
+        <button id="bMusic">♫ Hudba</button>
+        <button id="bNav">➤ Navigace</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAPA -->
+  <div class="view" id="mapv">
+    <div id="navBar">
+      <input id="navQ" type="search" placeholder="Kam jedeme?" autocomplete="off" autocorrect="off">
+      <button class="sm" id="navGo">Hledat</button>
+      <button class="sm" id="navX" style="display:none">✕</button>
+    </div>
+    <div id="navRes"></div>
+    <div id="navInfo">
+      <div id="navArrow">↑</div>
+      <div id="navTxt"><b id="navDist" class="num"></b><span id="navStep"></span><span id="navRem"></span></div>
+      <button class="sm" id="navApple">Apple<br>Mapy</button>
+    </div>
+    <div style="flex:1;position:relative;min-height:0;display:flex">
+      <div id="map"></div>
+      <div id="navSpeed" class="num"><span id="nSpd">0</span><small>km/h</small></div>
+    </div>
+  </div>
+
+  <!-- VÝKON -->
+  <div class="view" id="perf">
+    <div id="perfTop">
+      <div>
+        <div class="cap">NÁKLON</div>
+        <canvas id="leanC" width="300" height="190"></canvas>
+        <div id="leanVal" class="num">0°</div>
+        <div class="cap num">MAX L <span id="leanL">0</span>° · P <span id="leanR">0</span>°</div>
+      </div>
+      <div>
+        <div class="cap">G-METER</div>
+        <canvas id="gC" width="300" height="300"></canvas>
+        <div class="cap num">MAX akc <span id="gA">0.00</span> · brzda <span id="gB">0.00</span> · bok <span id="gL">0.00</span></div>
+      </div>
+    </div>
+    <div id="timer">
+      <div id="timerBox">
+        <div id="tState">Měření zrychlení</div>
+        <div class="tr"><span>0–60 km/h</span><span><b id="t60" class="num">–</b><small id="b60" class="num"></small></span></div>
+        <div class="tr"><span>0–100 km/h</span><span><b id="t100" class="num">–</b><small id="b100" class="num"></small></span></div>
+        <div class="tr"><span>¼ míle (402 m)</span><span><b id="tQ" class="num">–</b><small id="bQ" class="num"></small></span></div>
+        <div class="row" style="padding:10px 0 0">
+          <button class="pri" id="tArm">Připravit měření</button>
+        </div>
+        <div class="row" style="padding:8px 0 0">
+          <button class="sm" id="bCal">Kalibrace</button>
+          <button class="sm" id="bFlip">Otočit L/P</button>
+          <button class="sm" id="bRst">Reset max</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SERVIS -->
+  <div class="view" id="svc">
+    <div id="odoBox"><div><div class="cap">TACHOMETR</div><div id="odo" class="num">0 km</div></div><button class="sm" id="bOdo">Upravit</button></div>
+    <h3>SERVIS</h3>
+    <div id="svcList"></div>
+    <button class="sm" id="bAdd">+ Přidat položku</button>
+    <h3>JÍZDY</h3>
+    <div id="rides"></div>
+    <h3>DATA</h3>
+    <div class="row" style="padding:0"><button class="sm" id="bExp">Záloha</button><button class="sm" id="bImp">Obnovit</button></div>
+  </div>
+</div>
+
+<div id="tabs">
+  <button data-v="drive" class="on">JÍZDA</button>
+  <button data-v="mapv">MAPA</button>
+  <button data-v="perf">VÝKON</button>
+  <button data-v="svc">SERVIS</button>
+</div>
+
+<div id="start">
+  <h1>R125 DASH</h1>
+  <p>Povol polohu a pohybové senzory. Na iPhonu si nastav <b>Nastavení → Displej a jas → Uzamčení → Nikdy</b>, jinak displej za jízdy zhasne.</p>
+  <button class="pri" id="bStart">START</button>
+  <p id="startErr" style="color:#ff4d4d"></p>
+</div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+var $=function(id){return document.getElementById(id)};
+var G=9.80665, KMH=3.6, QM=402.336;
+var rad=function(d){return d*Math.PI/180}, deg=function(r){return r*180/Math.PI};
+var clamp=function(x,a,b){return x<a?a:x>b?b:x};
+var dot=function(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]};
+var cross=function(a,b){return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]]};
+var norm=function(a){var n=Math.sqrt(dot(a,a))||1;return [a[0]/n,a[1]/n,a[2]/n]};
+function hav(a,b,c,d){var R=6371000,p=rad(c-a),q=rad(d-b),s=Math.sin(p/2),t=Math.sin(q/2),h=s*s+Math.cos(rad(a))*Math.cos(rad(c))*t*t;return 2*R*Math.asin(Math.sqrt(h))}
+function toast(t,ms){var e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none'},ms||2500)}
+function fmtDur(s){s=Math.round(s);var h=Math.floor(s/3600),m=Math.floor(s%3600/60);return h?h+':'+('0'+m).slice(-2)+' h':m+':'+('0'+s%60).slice(-2)}
+
+/* ---------- STATE / STORAGE ---------- */
+var KEY='yam.v1';
+var DEF_SVC=[
+ {n:'Motorový olej',km:3000,mo:12},
+ {n:'Olejový filtr',km:6000,mo:0},
+ {n:'Mazání řetězu',km:500,mo:0},
+ {n:'Napnutí řetězu',km:1000,mo:0},
+ {n:'Brzdové destičky – kontrola',km:6000,mo:12},
+ {n:'Brzdová kapalina',km:0,mo:24},
+ {n:'Vzduchový filtr',km:12000,mo:0},
+ {n:'Zapalovací svíčka',km:12000,mo:0},
+ {n:'Chladicí kapalina',km:0,mo:36}
+];
+var S;
+function load(){
+  try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){S=null}
+  if(!S||typeof S!=='object')S={};
+  if(typeof S.odo!=='number')S.odo=0;
+  if(!S.rides)S.rides=[];
+  if(!S.best)S.best={};
+  if(!S.svc){var now=Date.now();S.svc=DEF_SVC.map(function(x){return {n:x.n,km:x.km,mo:x.mo,atKm:0,atT:now}})}
+  if(typeof S.corr!=='number')S.corr=2;
+  if(S.cur&&Date.now()-S.cur.last>6e5)endRide();
+}
+var saveT=0;
+function save(force){var n=Date.now();if(!force&&n-saveT<5000)return;saveT=n;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function endRide(){
+  var c=S.cur;if(!c)return;
+  if(c.km>=0.3)S.rides.unshift({t:c.start,km:+c.km.toFixed(2),dur:Math.round(c.dur),max:Math.round(c.max)});
+  if(S.rides.length>300)S.rides.length=300;
+  S.cur=null;save(true);renderSvc();
+}
+
+/* ---------- GPS ---------- */
+var P={v:0,lat:null,lon:null,t:0,acc:999,hdg:null,alt:null,ok:false};
+var prevFix=null;
+function onPos(p){
+  var c=p.coords,now=Date.now();
+  P.acc=c.accuracy;P.ok=c.accuracy<=35;
+  $('gps').firstChild.style.background=P.ok?'var(--ok)':(c.accuracy<=80?'var(--warn)':'var(--bad)');
+  $('gpsT').textContent='±'+Math.round(c.accuracy)+' m';
+  if(!P.ok){return}
+  var v=(typeof c.speed==='number'&&c.speed>=0)?c.speed:null;
+  var d=0,dt=0;
+  if(prevFix){d=hav(prevFix.lat,prevFix.lon,c.latitude,c.longitude);dt=(now-prevFix.t)/1000;if(v===null&&dt>0.2&&dt<5)v=d/dt}
+  if(v===null)v=0;
+  if(v<0.5)v=0;
+  var vPrev=P.v,tPrev=P.t;
+  P.v=v;P.lat=c.latitude;P.lon=c.longitude;P.t=now;
+  if(typeof c.heading==='number'&&c.heading>=0&&v>1.5)P.hdg=c.heading;
+  P.alt=(typeof c.altitude==='number')?c.altitude:null;
+  // záznam jízdy
+  if(v>2.5&&!S.cur)S.cur={start:now,km:0,dur:0,max:0,last:now};
+  if(S.cur){
+    if(now-S.cur.last>6e5&&v<1){endRide()}
+    else if(prevFix&&dt>0&&dt<120&&(v>1||vPrev>1)){
+      var km=d/1000;
+      if(km<dt*0.07){S.cur.km+=km;S.odo+=km;if(dt<10)S.cur.dur+=dt;S.cur.last=now}
+      if(v*KMH>S.cur.max)S.cur.max=v*KMH;
+    }
+  }
+  // autokalibrace znaménka podélného zrychlení podle GPS
+  if(tPrev&&now-tPrev<3000&&accN>3){
+    var a=(v-vPrev)/((now-tPrev)/1000),m=accSum/accN;
+    if(Math.abs(a)>0.7&&Math.abs(m)>0.3){S.corr=clamp(S.corr+a*m,-500,500)}
+  }
+  accSum=0;accN=0;
+  timerFix(v,vPrev,now,tPrev);
+  prevFix={lat:c.latitude,lon:c.longitude,t:now};
+  navFix();
+  save();
+}
+function onPosErr(e){$('gpsT').textContent=e.code===1?'GPS zakázáno':'GPS…';$('gps').firstChild.style.background='var(--bad)'}
+
+/* ---------- SENZORY: náklon + G ---------- */
+var cal=null;       // {u,f,l,sg}
+var lean=0,leanL=0,leanR=0,yawF=0,gLong=0,gLat=0,gMaxA=0,gMaxB=0,gMaxL=0;
+var lastOri=null,lastAig=null,lastMt=0,accSum=0,accN=0,sensors=false;
+function calibrate(){
+  if(!lastOri||lastOri.beta===null||lastOri.beta===undefined){toast('Senzory nejsou dostupné');return false}
+  var b=rad(lastOri.beta),g=rad(lastOri.gamma);
+  var u=[-Math.cos(b)*Math.sin(g),Math.sin(b),Math.cos(b)*Math.cos(g)];   // "nahoru" v osách telefonu
+  var back=[0,0,-1],k=dot(back,u),f=[back[0]-k*u[0],back[1]-k*u[1],back[2]-k*u[2]];
+  if(Math.sqrt(dot(f,f))<0.35){ // telefon skoro naplocho -> dopředu = horní hrana obrazu
+    var o=window.orientation||0,top=o===90?[1,0,0]:o===-90?[-1,0,0]:[0,1,0];
+    k=dot(top,u);f=[top[0]-k*u[0],top[1]-k*u[1],top[2]-k*u[2]];
+  }
+  f=norm(f);
+  var sg=lastAig?(dot(lastAig,u)>=0?1:-1):-1;
+  cal={u:u,f:f,l:cross(u,f),sg:sg,flip:(cal&&cal.flip)||1};
+  S.cal=cal;lean=0;save(true);
+  toast('Zkalibrováno');return true;
+}
+function onOri(e){lastOri=e}
+function onMotion(e){
+  var now=performance.now(),dt=(now-lastMt)/1000;lastMt=now;
+  var ag=e.accelerationIncludingGravity;
+  if(ag&&ag.x!==null)lastAig=[ag.x,ag.y,ag.z];
+  if(!cal||dt<=0||dt>0.25)return;
+  sensors=true;
+  var rr=e.rotationRate;
+  if(rr&&rr.alpha!==null){
+    var w=[rad(rr.beta),rad(rr.gamma),rad(rr.alpha)];
+    var roll=dot(w,cal.f)*cal.flip,yaw=dot(w,cal.u)*cal.flip;
+    yawF+=(yaw-yawF)*Math.min(1,dt/0.25);
+    lean+=roll*dt;
+    if(P.v>4&&Date.now()-P.t<3000){
+      var phys=-Math.asin(clamp(P.v*yawF/G,-0.92,0.92));   // sin(náklon)=v·ω/g
+      lean+=(phys-lean)*Math.min(1,dt/2.5);
+    }else if(lastAig){
+      var up=norm([lastAig[0]*cal.sg,lastAig[1]*cal.sg,lastAig[2]*cal.sg]);
+      var tilt=Math.atan2(dot(up,cal.l),dot(up,cal.u))*cal.flip;
+      lean+=(tilt-lean)*Math.min(1,dt/1.0);
+    }
+    lean=clamp(lean,-1.2,1.2);
+    if(P.v>4){var ld=deg(lean);if(ld>leanR)leanR=ld;if(-ld>leanL)leanL=-ld}
+  }
+  var a=e.acceleration;
+  if(a&&a.x!==null){
+    var al=dot([a.x,a.y,a.z],cal.f);
+    accSum+=al;accN++;
+    var s=S.corr>=0?1:-1;
+    gLong+=(s*al/G-gLong)*Math.min(1,dt/0.3);
+    gLat=P.v>4?Math.tan(lean):0;
+    if(P.v>3){if(gLong>gMaxA)gMaxA=gLong;if(-gLong>gMaxB)gMaxB=-gLong;if(Math.abs(gLat)>gMaxL)gMaxL=Math.abs(gLat)}
+    timerMotion(gLong);
+  }
+}
+
+/* ---------- MĚŘENÍ 0-100, 1/4 míle ---------- */
+var T={st:'idle'};
+function tSet(st,msg){T.st=st;$('tState').textContent=msg;$('tArm').textContent=st==='idle'?'Připravit měření':'Zrušit'}
+function tArm(){
+  if(T.st!=='idle'){tSet('idle','Měření zrušeno');return}
+  if(!P.ok){toast('Počkej na GPS signál');return}
+  if(P.v>0.6){toast('Nejdřív zastav');return}
+  T={st:'armed',t0:0,d:0,gT:0,r:{}};
+  ['t60','t100','tQ'].forEach(function(i){$(i).textContent='–'});
+  tSet('armed','PŘIPRAVENO – vyraz');
+}
+function timerMotion(g){
+  if(T.st!=='armed')return;
+  var n=Date.now();
+  if(g>0.12){if(!T.gT)T.gT=n;else if(n-T.gT>150&&!T.t0){T.t0=T.gT;T.src='senzor'}}
+  else if(!T.t0)T.gT=0;
+}
+function timerFix(v,vp,t,tp){
+  if(T.st==='armed'){
+    if(T.t0&&t-T.t0>4000&&v<1){T.t0=0;T.gT=0}          // planý poplach
+    if(v>1){
+      if(!T.t0||t-T.t0>4000){T.t0=Math.max(tp||t-1000,t-v/3*1000);T.src='GPS'}
+      T.st='run';T.d=v/2*(t-T.t0)/1000;T.tLast=t;
+      $('tState').textContent='MĚŘÍM…';
+    }
+    return;
+  }
+  if(T.st!=='run')return;
+  var dt=(t-tp)/1000,d0=T.d;T.d+=(v+vp)/2*dt;
+  [[60,'t60','s60'],[100,'t100','s100']].forEach(function(x){
+    var th=x[0]/KMH;
+    if(!T.r[x[2]]&&v>=th&&vp<th){T.r[x[2]]=(tp+(th-vp)/(v-vp)*(t-tp)-T.t0)/1000;$(x[1]).textContent=T.r[x[2]].toFixed(1)+' s'}
+  });
+  if(!T.r.q&&T.d>=QM){
+    var fr=(QM-d0)/(T.d-d0);T.r.q=(tp+fr*(t-tp)-T.t0)/1000;T.r.qv=(vp+fr*(v-vp))*KMH;
+    $('tQ').textContent=T.r.q.toFixed(1)+' s @ '+Math.round(T.r.qv);
+  }
+  var done=T.r.q&&(T.r.s100||v<vp);
+  if(done||v<1.5||t-T.t0>90000){
+    var b=S.best;
+    if(T.r.s60&&(!b.s60||T.r.s60<b.s60))b.s60=T.r.s60;
+    if(T.r.s100&&(!b.s100||T.r.s100<b.s100))b.s100=T.r.s100;
+    if(T.r.q&&(!b.q||T.r.q<b.q)){b.q=T.r.q;b.qv=T.r.qv}
+    save(true);renderBest();
+    tSet('idle','Hotovo (start: '+T.src+')');
+  }
+}
+function renderBest(){
+  var b=S.best;
+  $('b60').textContent=b.s60?'best '+b.s60.toFixed(1):'';
+  $('b100').textContent=b.s100?'best '+b.s100.toFixed(1):'';
+  $('bQ').textContent=b.q?'best '+b.q.toFixed(1):'';
+}
+
+/* ---------- KRESLENÍ ---------- */
+function drawLean(){
+  var c=$('leanC'),x=c.getContext('2d'),W=c.width,H=c.height,cx=W/2,cy=H-18,R=H-40;
+  x.clearRect(0,0,W,H);
+  x.lineWidth=10;x.strokeStyle='#262a31';x.beginPath();x.arc(cx,cy,R,Math.PI*1.08,Math.PI*1.92);x.stroke();
+  x.strokeStyle='#8a8f98';x.lineWidth=2;
+  for(var a=-60;a<=60;a+=15){var r=rad(a-90);x.beginPath();x.moveTo(cx+Math.cos(r)*(R-10),cy+Math.sin(r)*(R-10));x.lineTo(cx+Math.cos(r)*(R+8),cy+Math.sin(r)*(R+8));x.stroke()}
+  var ld=clamp(deg(lean),-65,65),r2=rad(ld-90);
+  x.strokeStyle=Math.abs(ld)>40?'#ff4d4d':Math.abs(ld)>25?'#ffb020':'#2f7bff';x.lineWidth=8;x.lineCap='round';
+  x.beginPath();x.moveTo(cx,cy);x.lineTo(cx+Math.cos(r2)*(R-16),cy+Math.sin(r2)*(R-16));x.stroke();
+  x.fillStyle='#fff';x.beginPath();x.arc(cx,cy,9,0,7);x.fill();
+}
+function drawG(){
+  var c=$('gC'),x=c.getContext('2d'),W=c.width,cx=W/2,R=W/2-12;
+  x.clearRect(0,0,W,W);x.strokeStyle='#262a31';x.lineWidth=2;
+  [0.5,1].forEach(function(k){x.beginPath();x.arc(cx,cx,R*k,0,7);x.stroke()});
+  x.beginPath();x.moveTo(cx-R,cx);x.lineTo(cx+R,cx);x.moveTo(cx,cx-R);x.lineTo(cx,cx+R);x.stroke();
+  x.fillStyle='#8a8f98';x.font='20px -apple-system';x.fillText('1g',cx+R-26,cx-6);
+  var gx=clamp(gLat,-1.1,1.1),gy=clamp(gLong,-1.1,1.1);
+  x.fillStyle='#2f7bff';x.beginPath();x.arc(cx+gx*R,cx-gy*R,14,0,7);x.fill();   // tečka ukazuje směr zrychlení: akcelerace nahoru, pravá zatáčka vpravo
+}
+
+/* ---------- UI SMYČKA ---------- */
+var curView='drive';
+function tick(){
+  var d=new Date();$('clock').textContent=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+  var stale=Date.now()-P.t>4000,kmh=stale?0:Math.round(P.v*KMH);
+  if(stale&&P.t){$('gps').firstChild.style.background='var(--warn)'}
+  $('speed').textContent=kmh;$('nSpd').textContent=kmh;
+  $('hdg').textContent=P.hdg===null?'':['S','SV','V','JV','J','JZ','Z','SZ'][Math.round(P.hdg/45)%8]+' '+Math.round(P.hdg)+'°';
+  var c=S.cur;
+  $('dTrip').textContent=c?c.km.toFixed(1):'0.0';
+  $('dTime').textContent=c?fmtDur(c.dur):'0:00';
+  $('dMax').textContent=c?Math.round(c.max):0;
+  $('dAvg').textContent=c&&c.dur>20?Math.round(c.km/(c.dur/3600)):0;
+  $('dAlt').textContent=P.alt===null?'–':Math.round(P.alt);
+  $('dLean').textContent=cal&&sensors?Math.abs(Math.round(deg(lean)))+'°':'–';
+}
+function frame(){
+  if(curView==='perf'){
+    drawLean();drawG();
+    var ld=Math.round(deg(lean));
+    $('leanVal').textContent=cal?(ld<0?'L ':ld>0?'P ':'')+Math.abs(ld)+'°':'kalibruj';
+    $('leanL').textContent=Math.round(leanL);$('leanR').textContent=Math.round(leanR);
+    $('gA').textContent=gMaxA.toFixed(2);$('gB').textContent=gMaxB.toFixed(2);$('gL').textContent=gMaxL.toFixed(2);
+  }
+  requestAnimationFrame(frame);
+}
+function show(v){
+  curView=v;
+  [].forEach.call(document.querySelectorAll('.view'),function(e){e.classList.toggle('on',e.id===v)});
+  [].forEach.call(document.querySelectorAll('#tabs button'),function(e){e.classList.toggle('on',e.dataset.v===v)});
+  if(v==='mapv')initMap();
+  if(v==='svc')renderSvc();
+}
+
+/* ---------- SERVIS ---------- */
+function svcState(it){
+  var fr=0,txt=[];
+  if(it.km>0){var used=S.odo-it.atKm,left=it.km-used;fr=Math.max(fr,used/it.km);txt.push(left>=0?'zbývá '+Math.round(left)+' km':'PŘES o '+Math.round(-left)+' km')}
+  if(it.mo>0){var m=(Date.now()-it.atT)/2.63e9,lm=it.mo-m;fr=Math.max(fr,m/it.mo);txt.push(lm>=0?'zbývá '+(lm<1?Math.round(lm*30)+' dní':lm.toFixed(1)+' měs.'):'PŘES o '+(-lm).toFixed(1)+' měs.')}
+  return {fr:fr,txt:txt.join(' · ')};
+}
+function renderSvc(){
+  $('odo').textContent=Math.round(S.odo).toLocaleString('cs-CZ')+' km';
+  var h='';
+  S.svc.forEach(function(it,i){
+    var s=svcState(it),col=s.fr>=1?'var(--bad)':s.fr>=0.85?'var(--warn)':'var(--ok)';
+    h+='<div class="it"><div class="h"><span>'+esc(it.n)+'</span><span style="color:'+col+'">'+(s.fr>=1?'VYMĚNIT':s.fr>=0.85?'BRZY':'OK')+'</span></div>'+
+       '<div class="s">'+s.txt+' · interval '+(it.km?it.km+' km':'')+(it.km&&it.mo?' / ':'')+(it.mo?it.mo+' měs.':'')+'</div>'+
+       '<div class="bar"><i style="width:'+Math.min(100,s.fr*100)+'%;background:'+col+'"></i></div>'+
+       '<div class="b"><button class="sm" data-a="done" data-i="'+i+'">Hotovo ✓</button><button class="sm" data-a="edit" data-i="'+i+'">Upravit</button><button class="sm" data-a="del" data-i="'+i+'">Smazat</button></div></div>';
+  });
+  $('svcList').innerHTML=h;
+  var r='';
+  S.rides.slice(0,30).forEach(function(x){var d=new Date(x.t);r+='<div class="ride num"><span>'+d.getDate()+'. '+(d.getMonth()+1)+'. '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+'</span><span>'+x.km.toFixed(1)+' km</span><span>'+fmtDur(x.dur)+'</span><span>max '+x.max+'</span></div>'});
+  $('rides').innerHTML=r||'<div class="dim" style="padding:6px 4px;font-size:14px">Zatím žádná jízda.</div>';
+}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function askNum(q,def){var v=prompt(q,def);if(v===null)return null;v=parseFloat(String(v).replace(',','.').replace(/\s/g,''));return isNaN(v)||v<0?null:v}
+function svcDue(){
+  var n=S.svc.filter(function(it){return svcState(it).fr>=1}).map(function(it){return it.n});
+  if(n.length)toast('Servis: '+n.join(', '),6000);
+}
+
+/* ---------- MAPA + NAVIGACE ---------- */
+var map=null,meM=null,routeL=null,destM=null,follow=true,Lready=0,route=null,stepI=0,lastReroute=0;
+function initMap(){
+  if(map){setTimeout(function(){map.invalidateSize()},50);return}
+  if(Lready===1)return;
+  Lready=1;
+  var css=document.createElement('link');css.rel='stylesheet';css.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';document.head.appendChild(css);
+  var s=document.createElement('script');s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  s.onload=function(){
+    map=L.map('map',{zoomControl:false,attributionControl:true}).setView([P.lat||49.137,P.lon||13.235],P.lat?15:11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+    meM=L.marker([P.lat||49.137,P.lon||13.235],{icon:L.divIcon({className:'',html:'<div class="me"></div>',iconSize:[22,22],iconAnchor:[11,11]})}).addTo(map);
+    map.on('dragstart',function(){follow=false;setTimeout(function(){follow=true},15000)});
+    setTimeout(function(){map.invalidateSize()},100);
+    if(route)drawRoute();
+  };
+  s.onerror=function(){Lready=0;toast('Mapa potřebuje internet')};
+  document.head.appendChild(s);
+}
+function navFix(){
+  if(map&&meM&&P.lat!==null){meM.setLatLng([P.lat,P.lon]);if(follow&&curView==='mapv')map.setView([P.lat,P.lon],Math.max(map.getZoom(),15),{animate:false})}
+  if(!route||P.lat===null)return;
+  var st=route.steps;
+  // posun na další manévr: dojeli jsme k němu, nebo jsme ho minuli (vzdálenost zase roste)
+  while(stepI<st.length-1){
+    var m=st[stepI].maneuver.location,dm=hav(P.lat,P.lon,m[1],m[0]);
+    if(dm<route.dmin)route.dmin=dm;
+    if(dm<25||(route.dmin<60&&dm>route.dmin+40)){stepI++;route.dmin=1e9}else break;
+  }
+  var cur=st[stepI],ml=cur.maneuver.location,dist=hav(P.lat,P.lon,ml[1],ml[0]);
+  var rem=dist;for(var i=stepI;i<st.length;i++)rem+=st[i].distance;
+  var ins=instr(cur);
+  $('navArrow').textContent=ins.a;
+  $('navDist').textContent=dist>=1000?(dist/1000).toFixed(1)+' km':Math.round(dist/10)*10+' m';
+  $('navStep').textContent=ins.t;
+  $('navRem').textContent='zbývá '+(rem/1000).toFixed(1)+' km';
+  if(stepI===st.length-1&&dist<30){toast('Jsi v cíli');navClear();return}
+  // mimo trasu -> přepočítat
+  if(P.v>3&&Date.now()-lastReroute>15000&&offRoute()>90){lastReroute=Date.now();calcRoute(route.dest,true)}
+}
+function offRoute(){
+  var c=route.coords,best=1e9;
+  for(var i=0;i<c.length;i++){var d=hav(P.lat,P.lon,c[i][0],c[i][1]);if(d<best)best=d}
+  return best;
+}
+function instr(s){
+  var m=s.maneuver,mod=m.modifier||'',nm=s.name?' · '+s.name:'';
+  var A={'left':'←','right':'→','slight left':'↖','slight right':'↗','sharp left':'↰','sharp right':'↱','straight':'↑','uturn':'↶'};
+  var Tx={'left':'Odboč vlevo','right':'Odboč vpravo','slight left':'Mírně vlevo','slight right':'Mírně vpravo','sharp left':'Ostře vlevo','sharp right':'Ostře vpravo','straight':'Rovně','uturn':'Otoč se'};
+  if(m.type==='arrive')return {a:'⚑',t:'Cíl'};
+  if(m.type==='depart')return {a:'↑',t:'Vyjeď'+nm};
+  if(m.type==='roundabout'||m.type==='rotary')return {a:'⟳',t:'Kruhový objezd, '+(m.exit||'?')+'. výjezd'+nm};
+  return {a:A[mod]||'↑',t:(Tx[mod]||'Pokračuj')+nm};
+}
+function navSearch(){
+  var q=$('navQ').value.trim();if(!q)return;
+  $('navQ').blur();
+  var u='https://nominatim.openstreetmap.org/search?format=json&limit=6&accept-language=cs&q='+encodeURIComponent(q);
+  if(P.lat!==null)u+='&viewbox='+(P.lon-2)+','+(P.lat+1.5)+','+(P.lon+2)+','+(P.lat-1.5);
+  fetch(u).then(function(r){return r.json()}).then(function(a){
+    var b=$('navRes');b.innerHTML='';
+    if(!a.length){toast('Nic nenalezeno');return}
+    a.forEach(function(x){var d=document.createElement('div');d.textContent=x.display_name;d.onclick=function(){b.style.display='none';calcRoute({lat:+x.lat,lon:+x.lon,name:x.display_name})};b.appendChild(d)});
+    b.style.display='block';
+  }).catch(function(){toast('Hledání potřebuje internet')});
+}
+function calcRoute(dest,quiet){
+  if(P.lat===null){toast('Čekám na GPS');return}
+  var u='https://router.project-osrm.org/route/v1/driving/'+P.lon+','+P.lat+';'+dest.lon+','+dest.lat+'?overview=full&geometries=geojson&steps=true';
+  fetch(u).then(function(r){return r.json()}).then(function(j){
+    if(!j.routes||!j.routes.length){toast('Trasa nenalezena');return}
+    var r=j.routes[0],steps=[];
+    r.legs.forEach(function(l){steps=steps.concat(l.steps)});
+    route={dest:dest,steps:steps,coords:r.geometry.coordinates.map(function(c){return [c[1],c[0]]}),dmin:1e9};
+    stepI=steps.length>1?1:0;
+    $('navInfo').style.display='flex';$('navX').style.display='';
+    drawRoute(!quiet);navFix();
+    if(!quiet)toast((r.distance/1000).toFixed(1)+' km · '+fmtDur(r.duration));
+  }).catch(function(){if(!quiet)toast('Trasa potřebuje internet')});
+}
+function drawRoute(fit){
+  if(!map||!route)return;
+  if(routeL)map.removeLayer(routeL);if(destM)map.removeLayer(destM);
+  routeL=L.polyline(route.coords,{color:'#2f7bff',weight:6,opacity:.9}).addTo(map);
+  destM=L.circleMarker([route.dest.lat,route.dest.lon],{radius:9,color:'#fff',fillColor:'#ff4d4d',fillOpacity:1}).addTo(map);
+  if(fit){follow=false;map.fitBounds(routeL.getBounds(),{padding:[30,30]});setTimeout(function(){follow=true},6000)}
+}
+function navClear(){
+  route=null;$('navInfo').style.display='none';$('navX').style.display='none';$('navQ').value='';
+  if(map){if(routeL)map.removeLayer(routeL);if(destM)map.removeLayer(destM)}
+}
+
+/* ---------- START ---------- */
+function start(){
+  var ps=[];
+  try{
+    if(window.DeviceMotionEvent&&DeviceMotionEvent.requestPermission)ps.push(DeviceMotionEvent.requestPermission());
+    if(window.DeviceOrientationEvent&&DeviceOrientationEvent.requestPermission)ps.push(DeviceOrientationEvent.requestPermission());
+  }catch(e){}
+  Promise.all(ps).catch(function(){}).then(function(){
+    window.addEventListener('devicemotion',onMotion);
+    window.addEventListener('deviceorientation',onOri);
+  });
+  if(!navigator.geolocation){$('startErr').textContent='Prohlížeč nemá GPS – stránka musí běžet přes https.';return}
+  navigator.geolocation.watchPosition(onPos,onPosErr,{enableHighAccuracy:true,maximumAge:0,timeout:20000});
+  if(navigator.wakeLock){var wl=function(){navigator.wakeLock.request('screen').catch(function(){})};wl();document.addEventListener('visibilitychange',function(){if(!document.hidden)wl()})}
+  $('start').style.display='none';
+  setInterval(tick,250);tick();requestAnimationFrame(frame);
+  setTimeout(svcDue,1500);
+  if(S.odo===0)setTimeout(function(){toast('V záložce SERVIS nastav stav tachometru',5000)},3000);
+}
+
+load();
+if(S.cal&&S.cal.u)cal=S.cal;
+renderBest();renderSvc();
+
+$('bStart').onclick=start;
+[].forEach.call(document.querySelectorAll('#tabs button'),function(b){b.onclick=function(){show(b.dataset.v)}});
+$('bMusic').onclick=function(){location.href='music://'};
+$('bNav').onclick=function(){show('mapv')};
+$('navGo').onclick=navSearch;
+$('navQ').addEventListener('keydown',function(e){if(e.key==='Enter')navSearch()});
+$('navX').onclick=navClear;
+$('navApple').onclick=function(){if(route)location.href='maps://?daddr='+route.dest.lat+','+route.dest.lon+'&dirflg=d'};
+$('tArm').onclick=tArm;
+$('bCal').onclick=function(){if(confirm('Motorka musí stát ROVNĚ a SVISLE (seď na ní, ne na bočním stojanu). Kalibrovat?'))calibrate()};
+$('bFlip').onclick=function(){if(!cal){toast('Nejdřív kalibruj');return}cal.flip=-cal.flip;S.cal=cal;lean=0;save(true);toast('Strany prohozeny')};
+$('bRst').onclick=function(){leanL=leanR=gMaxA=gMaxB=gMaxL=0};
+$('bOdo').onclick=function(){var v=askNum('Skutečný stav tachometru (km):',Math.round(S.odo));if(v!==null){S.odo=v;save(true);renderSvc()}};
+$('bAdd').onclick=function(){
+  var n=prompt('Název položky:');if(!n)return;
+  var km=askNum('Interval v km (0 = jen podle času):',3000);if(km===null)return;
+  var mo=askNum('Interval v měsících (0 = jen podle km):',0);if(mo===null)return;
+  S.svc.push({n:n,km:km,mo:mo,atKm:S.odo,atT:Date.now()});save(true);renderSvc();
+};
+$('svcList').onclick=function(e){
+  var b=e.target;if(!b.dataset||!b.dataset.a)return;
+  var it=S.svc[+b.dataset.i];
+  if(b.dataset.a==='done'){
+    var v=askNum('Při kolika km bylo provedeno?',Math.round(S.odo));if(v===null)return;
+    it.atKm=v;it.atT=Date.now();
+  }else if(b.dataset.a==='edit'){
+    var km=askNum('Interval v km (0 = vypnuto):',it.km);if(km===null)return;
+    var mo=askNum('Interval v měsících (0 = vypnuto):',it.mo);if(mo===null)return;
+    it.km=km;it.mo=mo;
+  }else if(b.dataset.a==='del'){
+    if(!confirm('Smazat „'+it.n+'“?'))return;S.svc.splice(+b.dataset.i,1);
+  }
+  save(true);renderSvc();
+};
+$('bExp').onclick=function(){
+  var t=JSON.stringify(S);
+  if(navigator.share)navigator.share({title:'R125 Dash záloha',text:t}).catch(function(){});
+  else prompt('Zkopíruj zálohu:',t);
+};
+$('bImp').onclick=function(){
+  var t=prompt('Vlož text zálohy:');if(!t)return;
+  try{var o=JSON.parse(t);if(typeof o.odo!=='number')throw 0;localStorage.setItem(KEY,JSON.stringify(o));location.reload()}catch(e){toast('Neplatná záloha')}
+};
+window.addEventListener('pagehide',function(){save(true)});
+document.addEventListener('visibilitychange',function(){if(document.hidden)save(true)});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(function(){});
+</script>
+</body>
+</html>
