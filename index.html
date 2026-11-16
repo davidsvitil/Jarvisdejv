@@ -42,7 +42,8 @@ button.sm{padding:8px 12px;font-size:14px;border-radius:10px}
 .row button.sm{font-size:14px;padding:8px 4px}
 /* MAPA */
 #map{flex:1;background:#111;min-height:0}
-#navBar{flex:none;padding:8px 10px;display:flex;gap:8px;align-items:center}
+#navBar{flex:none;padding:8px 10px;display:flex;gap:6px;align-items:center}
+#navBar button{white-space:nowrap;padding:10px 9px}
 #navBar input{flex:1;min-width:0;font:inherit;font-size:16px;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:#fff}
 #navRes{position:absolute;top:58px;left:10px;right:10px;z-index:1000;background:#1b1e24;border-radius:12px;max-height:55%;overflow:auto;display:none}
 #navRes div{padding:13px 14px;border-bottom:1px solid var(--line);font-size:15px}
@@ -117,7 +118,8 @@ button.sm{padding:8px 12px;font-size:14px;border-radius:10px}
   <div class="view" id="mapv">
     <div id="navBar">
       <input id="navQ" type="search" placeholder="Kam jedeme?" autocomplete="off" autocorrect="off">
-      <button class="sm" id="navGo">Hledat</button>
+      <button class="sm" id="navMode"></button>
+      <button class="sm" id="navGo">🔍</button>
       <button class="sm" id="navX" style="display:none">✕</button>
     </div>
     <div id="navRes"></div>
@@ -479,19 +481,68 @@ function navSearch(){
     b.style.display='block';
   }).catch(function(){toast('Hledání potřebuje internet')});
 }
+/* Režimy trasy: 'fast' = časově nejkratší podle OSRM, 'fun' = nejvíc zatáček v rozumném časovém limitu */
+function brg(a,b){var y=Math.sin(rad(b[1]-a[1]))*Math.cos(rad(b[0])),x=Math.cos(rad(a[0]))*Math.sin(rad(b[0]))-Math.sin(rad(a[0]))*Math.cos(rad(b[0]))*Math.cos(rad(b[1]-a[1]));return deg(Math.atan2(y,x))}
+function angd(a,b){var d=Math.abs(a-b)%360;return d>180?360-d:d}
+function curvy(c){   // stupně zatáčení na km; odbočky na křižovatkách omezené na 60°, aby nepřebily zatáčky
+  var sum=0,len=0,pb=null,last=c[0];
+  for(var i=1;i<c.length;i++){
+    var d=hav(last[0],last[1],c[i][0],c[i][1]);if(d<8)continue;
+    var b=brg(last,c[i]);if(pb!==null)sum+=Math.min(angd(b,pb),60);
+    pb=b;last=c[i];len+=d;
+  }
+  return len>0?sum/(len/1000):0;
+}
+function osrm(pts,extra){
+  var u='https://router.project-osrm.org/route/v1/driving/'+pts.map(function(p){return p[1]+','+p[0]}).join(';')+'?overview=full&geometries=geojson&steps=true'+(extra||'');
+  return fetch(u).then(function(r){return r.json()}).then(function(j){
+    return (j.routes||[]).map(function(r){
+      var steps=[],spur=false,L=r.legs;
+      L.forEach(function(l,li){
+        if(li>0){   // průjezdní bod na slepé odbočce = zajížďka tam a zpět -> vyřadit
+          var pa=L[li-1].steps[L[li-1].steps.length-1].maneuver,de=l.steps[0].maneuver;
+          if(angd(pa.bearing_before||0,de.bearing_after||0)>140)spur=true;
+        }
+        l.steps.forEach(function(s){
+          if(li<L.length-1&&s.maneuver.type==='arrive')return;
+          if(li>0&&s.maneuver.type==='depart')return;
+          steps.push(s);
+        });
+      });
+      var coords=r.geometry.coordinates.map(function(c){return [c[1],c[0]]});
+      return {steps:steps,coords:coords,dist:r.distance,dur:r.duration,spur:spur,cv:curvy(coords)};
+    });
+  }).catch(function(){return null});
+}
 function calcRoute(dest,quiet){
   if(P.lat===null){toast('Čekám na GPS');return}
-  var u='https://router.project-osrm.org/route/v1/driving/'+P.lon+','+P.lat+';'+dest.lon+','+dest.lat+'?overview=full&geometries=geojson&steps=true';
-  fetch(u).then(function(r){return r.json()}).then(function(j){
-    if(!j.routes||!j.routes.length){toast('Trasa nenalezena');return}
-    var r=j.routes[0],steps=[];
-    r.legs.forEach(function(l){steps=steps.concat(l.steps)});
-    route={dest:dest,steps:steps,coords:r.geometry.coordinates.map(function(c){return [c[1],c[0]]}),dmin:1e9};
-    stepI=steps.length>1?1:0;
+  var A=[P.lat,P.lon],B=[dest.lat,dest.lon],D=hav(A[0],A[1],B[0],B[1]),fun=S.mode==='fun'&&D>3000;
+  var reqs=[osrm([A,B],'&alternatives=3')];
+  if(fun){
+    reqs.push(osrm([A,B],'&exclude=motorway'));
+    var b=brg(A,B),mid=[(A[0]+B[0])/2,(A[1]+B[1])/2];
+    [90,-90].forEach(function(side){   // průjezdní body vlevo a vpravo od přímé spojnice
+      var r=rad(b+side),o=D*0.25;
+      reqs.push(osrm([A,[mid[0]+o*Math.cos(r)/111320,mid[1]+o*Math.sin(r)/(111320*Math.cos(rad(mid[0])))],B]));
+    });
+  }
+  Promise.all(reqs).then(function(res){
+    if(res[0]===null){if(!quiet)toast('Trasa potřebuje internet');return}
+    var all=[];res.forEach(function(x){if(x)all=all.concat(x)});
+    if(!all.length){toast('Trasa nenalezena');return}
+    var fast=all[0];all.forEach(function(x){if(x.dur<fast.dur)fast=x});
+    var r=fast;
+    if(fun)all.forEach(function(x){if(!x.spur&&x.dur<=fast.dur*1.6&&x.cv>r.cv)r=x});
+    route={dest:dest,steps:r.steps,coords:r.coords,dmin:1e9};
+    stepI=r.steps.length>1?1:0;
     $('navInfo').style.display='flex';$('navX').style.display='';
     drawRoute(!quiet);navFix();
-    if(!quiet)toast((r.distance/1000).toFixed(1)+' km · '+fmtDur(r.duration));
-  }).catch(function(){if(!quiet)toast('Trasa potřebuje internet')});
+    if(!quiet){
+      var t=(r.dist/1000).toFixed(1)+' km · '+fmtDur(r.dur);
+      if(S.mode==='fun')t=r===fast?'Zábavnější trasu jsem nenašel – '+t:'Zábavná: '+t+' (+'+Math.round((r.dur-fast.dur)/60)+' min, '+Math.round(r.cv)+'°/km vs '+Math.round(fast.cv)+')';
+      toast(t,5000);
+    }
+  });
 }
 function drawRoute(fit){
   if(!map||!route)return;
@@ -533,6 +584,9 @@ $('bNav').onclick=function(){show('mapv')};
 $('navGo').onclick=navSearch;
 $('navQ').addEventListener('keydown',function(e){if(e.key==='Enter')navSearch()});
 $('navX').onclick=navClear;
+function modeLbl(){$('navMode').textContent=S.mode==='fun'?'〰 Zábavná':'⚡ Rychlá'}
+modeLbl();
+$('navMode').onclick=function(){S.mode=S.mode==='fun'?'fast':'fun';save(true);modeLbl();if(route)calcRoute(route.dest)};
 $('navApple').onclick=function(){if(route)location.href='maps://?daddr='+route.dest.lat+','+route.dest.lon+'&dirflg=d'};
 $('tArm').onclick=tArm;
 $('bCal').onclick=function(){if(confirm('Motorka musí stát ROVNĚ a SVISLE (seď na ní, ne na bočním stojanu). Kalibrovat?'))calibrate()};
