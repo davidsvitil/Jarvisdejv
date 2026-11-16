@@ -1,5 +1,5 @@
 // Offline cache: appka naběhne i bez signálu (mapa a hledání trasy internet potřebují dál).
-var C = 'r125-v1';
+var C = 'r125-v2';
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(C).then(function (c) { return c.addAll(['./', 'index.html']); }));
   self.skipWaiting();
