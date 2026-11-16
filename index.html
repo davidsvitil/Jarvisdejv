@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💌 Für dich</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: Georgia, "Times New Roman", serif;
+  }
+
+  body {
+    background: linear-gradient(to bottom, #ffd6e0 0%, #ffe9d6 55%, #fff4e6 100%);
+    position: relative;
+  }
+
+  /* ---------- Wolken ---------- */
+  .cloud {
+    position: absolute;
+    background: #fff;
+    border-radius: 100px;
+    opacity: 0.85;
+    animation: drift linear infinite;
+  }
+  .cloud::before, .cloud::after {
+    content: "";
+    position: absolute;
+    background: #fff;
+    border-radius: 50%;
+  }
+  .cloud::before { width: 50%; height: 160%; top: -70%; left: 15%; }
+  .cloud::after  { width: 40%; height: 130%; top: -50%; right: 15%; }
+  .c1 { width: 160px; height: 45px; top: 10%; animation-duration: 60s; }
+  .c2 { width: 110px; height: 32px; top: 24%; animation-duration: 80s; animation-delay: -30s; }
+  .c3 { width: 200px; height: 55px; top: 5%;  animation-duration: 95s; animation-delay: -60s; }
+
+  @keyframes drift {
+    from { left: 110%; }
+    to   { left: -30%; }
+  }
+
+  /* ---------- Wiese ---------- */
+  #ground {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 70px;
+    background: linear-gradient(to bottom, #9fd38a, #7fbf6a);
+    border-top: 4px solid #8cc777;
+    z-index: 1;
+  }
+
+  /* ---------- Szene: Haus + Briefkasten ---------- */
+  #scene {
+    position: absolute;
+    left: 50%;
+    bottom: 50px;
+    width: 560px;
+    height: 330px;
+    transform: translateX(-50%);
+    transform-origin: bottom center;
+    z-index: 2;
+  }
+
+  #house {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 340px;
+    height: 330px;
+  }
+
+  /* Briefkasten */
+  #mailbox {
+    position: absolute;
+    left: 40px;
+    bottom: 0;
+    width: 110px;
+    height: 170px;
+    cursor: default;
+  }
+  #mailbox .post {
+    position: absolute; left: 47px; bottom: 0;
+    width: 16px; height: 95px;
+    background: #8a5a3b; border-radius: 3px;
+  }
+  #mailbox .box {
+    position: absolute; left: 0; bottom: 90px;
+    width: 110px; height: 78px;
+    background: #d9334f;
+    border-radius: 10px 10px 6px 6px;
+    box-shadow: inset -8px -6px 0 rgba(0,0,0,0.12);
+  }
+  #mailbox .slot {
+    position: absolute; left: 18px; top: 18px;
+    width: 74px; height: 9px;
+    background: #4a1520; border-radius: 5px;
+  }
+  #mailbox .label {
+    position: absolute; left: 0; right: 0; top: 36px;
+    text-align: center; color: #ffe8ec;
+    font-size: 13px; letter-spacing: 1px; font-family: Arial, sans-serif;
+    font-weight: bold;
+  }
+  #mailbox .flag {
+    position: absolute; right: 6px; bottom: 120px;
+    width: 6px; height: 46px; background: #555;
+    transform-origin: bottom center;
+    transform: rotate(90deg);
+    transition: transform 0.5s cubic-bezier(.3,1.6,.5,1);
+  }
+  #mailbox .flag::after {
+    content: ""; position: absolute; top: 0; left: 6px;
+    width: 22px; height: 14px; background: #ffcc33; border-radius: 0 3px 3px 0;
+  }
+  #mailbox.full .flag { transform: rotate(0deg); }
+
+  #mailbox.full { cursor: pointer; }
+  #mailbox.full .box { animation: wiggle 1.4s ease-in-out infinite; }
+  @keyframes wiggle {
+    0%, 70%, 100% { transform: rotate(0); }
+    76% { transform: rotate(-4deg); }
+    82% { transform: rotate(4deg); }
+    88% { transform: rotate(-2deg); }
+    94% { transform: rotate(2deg); }
+  }
+  #mailbox.bump .box { animation: bump 0.35s ease-out; }
+  @keyframes bump {
+    0% { transform: translateY(0); } 40% { transform: translateY(5px); } 100% { transform: translateY(0); }
+  }
+
+  #mailbox .glow {
+    position: absolute; left: -20px; bottom: 70px;
+    width: 150px; height: 120px; border-radius: 50%;
+    background: radial-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0) 70%);
+    opacity: 0; transition: opacity 0.6s;
+    pointer-events: none;
+  }
+  #mailbox.full .glow { opacity: 1; animation: glow 1.6s ease-in-out infinite alternate; }
+  @keyframes glow { from { opacity: 0.4; } to { opacity: 1; } }
+
+  /* ---------- Taube ---------- */
+  #pigeon {
+    position: fixed;
+    left: 0; top: 0;
+    width: 150px;
+    z-index: 6;
+    transform: translate(-500px, -500px);
+    pointer-events: none;
+  }
+  #pigeon svg { width: 100%; height: auto; display: block;
+                animation: bob 0.5s ease-in-out infinite alternate; }
+  @keyframes bob { from { transform: translateY(-4px); } to { transform: translateY(4px); } }
+
+  .wing-top    { transform-origin: 95px 62px; animation: flapTop 0.25s ease-in-out infinite alternate; }
+  .wing-bottom { transform-origin: 95px 66px; animation: flapBottom 0.25s ease-in-out infinite alternate; }
+  @keyframes flapTop    { from { transform: rotate(18deg); }  to { transform: rotate(-38deg); } }
+  @keyframes flapBottom { from { transform: rotate(-10deg); } to { transform: rotate(30deg); } }
+
+  /* ---------- Umschlag ---------- */
+  #envelope {
+    position: fixed;
+    left: 0; top: 0;
+    width: 150px;
+    height: 100px;
+    opacity: 0;
+    z-index: 5;
+    pointer-events: none;
+    filter: drop-shadow(0 8px 12px rgba(150, 60, 80, 0.3));
+  }
+  .env-body {
+    position: absolute; inset: 0;
+    background: #fff7f0;
+    border: 2px solid #e8a0ae;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .env-body::before, .env-body::after {
+    content: ""; position: absolute; bottom: 0; width: 0; height: 0;
+    border-bottom: 50px solid #fde4e8;
+  }
+  .env-body::before { left: 0;  border-right: 75px solid transparent; }
+  .env-body::after  { right: 0; border-left: 75px solid transparent; }
+
+  .env-flap {
+    position: absolute; top: 0; left: 0; width: 0; height: 0;
+    border-left: 75px solid transparent;
+    border-right: 75px solid transparent;
+    border-top: 58px solid #f7c6d0;
+    transform-origin: top;
+    transition: transform 0.6s ease;
+    z-index: 2;
+  }
+  #envelope.open .env-flap { transform: rotateX(180deg); }
+
+  .env-heart {
+    position: absolute; left: 50%; top: 40px;
+    transform: translate(-50%, -50%);
+    font-size: 26px; z-index: 3;
+  }
+
+  #hint {
+    position: absolute; left: 50%; top: 14%;
+    transform: translateX(-50%);
+    color: #b04a62; font-style: italic; font-size: 20px;
+    opacity: 0; transition: opacity 0.8s;
+    text-align: center; pointer-events: none;
+    z-index: 3; padding: 0 12px;
+  }
+  #hint.show { opacity: 1; }
+
+  /* ---------- Liebesbrief ---------- */
+  #letter-overlay {
+    position: fixed; inset: 0;
+    background: rgba(90, 30, 45, 0.45);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.6s ease;
+    z-index: 10;
+    padding: 20px;
+  }
+  #letter-overlay.show { opacity: 1; pointer-events: auto; }
+
+  #letter {
+    position: relative;
+    background: #fffdf8;
+    width: min(580px, 100%);
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 44px 40px 36px;
+    border-radius: 8px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    transform: translateY(60px) scale(0.85);
+    transition: transform 0.7s cubic-bezier(.2,.9,.3,1.2);
+    color: #4a2a33;
+    line-height: 1.7;
+    font-size: 18px;
+  }
+  #letter-overlay.show #letter { transform: translateY(0) scale(1); }
+
+  #letter h1 {
+    font-family: "Brush Script MT", "Segoe Script", cursive;
+    font-weight: normal; font-size: 42px; line-height: 1.2;
+    color: #c0395a; margin-bottom: 18px;
+  }
+  #letter p { margin-bottom: 18px; }
+  #letter .love { font-size: 22px; color: #c0395a; text-align: center; margin: 24px 0; }
+  #letter .signature {
+    text-align: right;
+    font-family: "Brush Script MT", "Segoe Script", cursive;
+    font-size: 28px; line-height: 1.3; color: #c0395a;
+  }
+
+  #close {
+    position: absolute; top: 10px; right: 14px;
+    background: none; border: none; font-size: 28px;
+    color: #c0395a; cursor: pointer; line-height: 1;
+  }
+
+  /* ---------- Herzen ---------- */
+  .float-heart {
+    position: fixed; bottom: -40px;
+    pointer-events: none; z-index: 11;
+    animation: rise linear forwards;
+  }
+  @keyframes rise {
+    to { transform: translateY(-115vh) rotate(25deg); opacity: 0; }
+  }
+
+  #replay {
+    position: fixed; top: 14px; right: 16px;
+    background: rgba(255,255,255,0.6); border: 1px solid #e8a0ae;
+    border-radius: 20px; padding: 6px 14px;
+    color: #b04a62; font-family: inherit; cursor: pointer;
+    opacity: 0; pointer-events: none; transition: opacity 0.5s; z-index: 7;
+  }
+  #replay.show { opacity: 1; pointer-events: auto; }
+
+  @media (max-width: 600px) {
+    #scene { transform: translateX(-50%) scale(0.62); }
+    #pigeon { width: 115px; }
+    #letter { padding: 38px 22px 28px; font-size: 16px; }
+    #letter h1 { font-size: 36px; }
+  }
+  @media (max-height: 560px) {
+    #scene { transform: translateX(-50%) scale(0.6); }
+  }
+</style>
+</head>
+<body>
+
+  <div class="cloud c1"></div>
+  <div class="cloud c2"></div>
+  <div class="cloud c3"></div>
+
+  <div id="hint">Post für dich 💌<br>Klick auf den Briefkasten!</div>
+
+  <div id="ground"></div>
+
+  <!-- Dům + schránka -->
+  <div id="scene">
+
+    <svg id="house" viewBox="0 0 340 330" xmlns="http://www.w3.org/2000/svg">
+      <!-- komín -->
+      <rect x="230" y="40" width="30" height="60" fill="#9b4a3c"/>
+      <rect x="225" y="34" width="40" height="10" fill="#7d3a2f"/>
+      <!-- zeď -->
+      <rect x="30" y="140" width="280" height="190" fill="#fff3df"/>
+      <rect x="30" y="140" width="280" height="190" fill="none" stroke="#e8cfae" stroke-width="3"/>
+      <!-- střecha -->
+      <polygon points="10,150 170,40 330,150" fill="#c0504a"/>
+      <polygon points="10,150 170,40 330,150 316,150 170,56 24,150" fill="#a03f3a"/>
+      <!-- okno ve štítu -->
+      <circle cx="170" cy="110" r="18" fill="#bfe3ff" stroke="#fff" stroke-width="5"/>
+      <path d="M170 92 V128 M152 110 H188" stroke="#fff" stroke-width="3"/>
+      <!-- okna -->
+      <g>
+        <rect x="55" y="175" width="62" height="56" fill="#bfe3ff" stroke="#fff" stroke-width="6"/>
+        <path d="M86 175 V231 M55 203 H117" stroke="#fff" stroke-width="4"/>
+        <rect x="50" y="231" width="72" height="8" fill="#d9c2a0"/>
+        <!-- květiny -->
+        <circle cx="62" cy="228" r="5" fill="#ff7aa2"/><circle cx="78" cy="226" r="5" fill="#ffd166"/>
+        <circle cx="94" cy="228" r="5" fill="#ff7aa2"/><circle cx="110" cy="226" r="5" fill="#ffd166"/>
+      </g>
+      <g>
+        <rect x="223" y="175" width="62" height="56" fill="#bfe3ff" stroke="#fff" stroke-width="6"/>
+        <path d="M254 175 V231 M223 203 H285" stroke="#fff" stroke-width="4"/>
+        <rect x="218" y="231" width="72" height="8" fill="#d9c2a0"/>
+        <circle cx="230" cy="228" r="5" fill="#ffd166"/><circle cx="246" cy="226" r="5" fill="#ff7aa2"/>
+        <circle cx="262" cy="228" r="5" fill="#ffd166"/><circle cx="278" cy="226" r="5" fill="#ff7aa2"/>
+      </g>
+      <!-- dveře -->
+      <rect x="142" y="225" width="56" height="105" rx="26" ry="26" fill="#8a5a3b"/>
+      <rect x="142" y="260" width="56" height="70" fill="#8a5a3b"/>
+      <circle cx="187" cy="285" r="4" fill="#ffcc33"/>
+      <text x="170" y="262" text-anchor="middle" font-size="20">❤</text>
+      <!-- cedulka s adresou -->
+      <rect x="113" y="148" width="114" height="34" rx="6" fill="#2f5d8a" stroke="#fff" stroke-width="3"/>
+      <text x="170" y="171" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif"
+            font-size="18" font-weight="bold">Gmünd 37</text>
+    </svg>
+
+    <div id="mailbox">
+      <div class="glow"></div>
+      <div class="post"></div>
+      <div class="flag"></div>
+      <div class="box">
+        <div class="slot" id="slot"></div>
+        <div class="label">POST</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Poštovní holub (kouká doleva, letí zprava doleva) -->
+  <div id="pigeon">
+    <svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg">
+      <g class="wing-bottom">
+        <path d="M95 66 C 120 80, 150 95, 175 92 C 160 84, 140 74, 115 62 Z" fill="#8d97a8"/>
+      </g>
+      <path d="M140 68 L 190 58 L 186 72 L 192 84 L 140 78 Z" fill="#7d8798"/>
+      <path d="M182 60 L 190 58 L 186 72 L 192 84 L 184 82 Z" fill="#3e4452"/>
+      <ellipse cx="100" cy="70" rx="48" ry="22" fill="#b4bccb"/>
+      <ellipse cx="88" cy="78" rx="32" ry="12" fill="#c9d0dc"/>
+      <path d="M60 58 C 55 70, 62 82, 75 82 C 80 72, 78 62, 70 54 Z" fill="#6aa58f"/>
+      <path d="M62 66 C 62 74, 66 80, 74 81 C 76 75, 74 69, 68 64 Z" fill="#9a6fb0" opacity="0.7"/>
+      <circle cx="56" cy="50" r="15" fill="#9aa3b4"/>
+      <path d="M42 48 L 30 52 L 42 54 Z" fill="#e7a24f"/>
+      <ellipse cx="44" cy="47" rx="3" ry="2" fill="#f2f2f2"/>
+      <circle cx="52" cy="46" r="3.6" fill="#ff8a3d"/>
+      <circle cx="51.5" cy="46" r="1.8" fill="#222"/>
+      <path d="M95 90 L 92 100 M 92 100 L 87 102 M 92 100 L 95 103" stroke="#e46a6a" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+      <path d="M108 90 L 106 100 M 106 100 L 101 102 M 106 100 L 109 103" stroke="#e46a6a" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+      <g class="wing-top">
+        <path d="M95 62 C 115 30, 145 10, 180 6 C 170 20, 160 30, 150 36 C 158 36, 165 38, 170 40 C 150 52, 125 60, 95 66 Z" fill="#a1aabb"/>
+        <path d="M150 36 C 158 36, 165 38, 170 40 C 165 44, 158 47, 150 50 Z" fill="#3e4452"/>
+        <path d="M110 52 L 150 34 M 118 58 L 158 44" stroke="#3e4452" stroke-width="3" stroke-linecap="round"/>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Obálka -->
+  <div id="envelope">
+    <div class="env-body"></div>
+    <div class="env-flap"></div>
+    <div class="env-heart">❤️</div>
+  </div>
+
+  <!-- Dopis -->
+  <div id="letter-overlay">
+    <div id="letter">
+      <button id="close" aria-label="Schließen">×</button>
+
+      <h1>My Pookie,</h1>
+
+      <p>leida hod se de Brieftaube voflong aiso hon i da a brieftaube programiert, dasse da zoing kann wi vei i de lieb. Leida kann des trotzdem ned mei Liebe fir di ausdrucka. Oba schadn kanns a ned(:</p>
+
+      <p>Wenn i in deine Aung einschau sege ned nur de perfekte blaue Foab, oba 2 Kiddis and groaße Villa, 2 Porsches oana in Burgunder fir di und oana in rot fir me. Du bisd de perfekte Mutti fir se!</p>
+
+      <p>Na koana in meim Lem is ma wichtiga gwen wi du Baby.</p>
+
+      <p class="love">I lieb de ❤️</p>
+
+      <div class="signature">Dei scheensta, besta, perfekta, zuverlässiga, freind<br>David ❤️</div>
+    </div>
+  </div>
+
+  <button id="replay">↺ nochmal</button>
+
+<script>
+  const pigeon   = document.getElementById('pigeon');
+  const envelope = document.getElementById('envelope');
+  const mailbox  = document.getElementById('mailbox');
+  const slot     = document.getElementById('slot');
+  const hint     = document.getElementById('hint');
+  const overlay  = document.getElementById('letter-overlay');
+  const replay   = document.getElementById('replay');
+
+  const FLY_TIME = 7000;   // ms – celý let holuba
+  const DROP_AT  = 0.47;   // v jaké části letu pustí dopis
+  const ENV_W = 150, ENV_H = 100;
+
+  let anims = [], timers = [];
+  let state = 'flying';
+
+  const center = el => {
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
+  };
+  const envPos = (x, y, s = 1, r = 0) =>
+    `translate(${x - ENV_W / 2}px, ${y - ENV_H / 2}px) scale(${s}) rotate(${r}deg)`;
+
+  function start() {
+    anims.forEach(a => a.cancel());
+    timers.forEach(clearTimeout);
+    anims = []; timers = [];
+    state = 'flying';
+
+    mailbox.className = '';
+    envelope.className = '';
+    envelope.style.opacity = 0;
+    hint.classList.remove('show');
+    replay.classList.remove('show');
+
+    const W = window.innerWidth;
+    const pw = pigeon.offsetWidth;
+    const ph = pw * 130 / 200;
+    const s = center(slot);
+
+    // holub se zastaví tak, aby měl nohy (~50 % šířky) nad štěrbinou
+    const hx = s.x - pw * 0.5;
+    const hy = Math.max(30, s.y - 230);
+
+    const pigeonAnim = pigeon.animate([
+      { transform: `translate(${W + 40}px, ${hy - 60}px)` },
+      { transform: `translate(${hx}px, ${hy}px)`, offset: 0.42 },
+      { transform: `translate(${hx - 15}px, ${hy + 12}px)`, offset: 0.55 },
+      { transform: `translate(${-pw - 80}px, ${hy - 140}px)` }
+    ], { duration: FLY_TIME, easing: 'ease-in-out', fill: 'forwards' });
+    anims.push(pigeonAnim);
+
+    // pustí dopis do schránky
+    timers.push(setTimeout(() => {
+      const p = pigeon.getBoundingClientRect();
+      const fx = p.left + pw * 0.5, fy = p.top + ph * 0.8;
+      const t = center(slot);
+      envelope.style.opacity = 1;
+      const drop = envelope.animate([
+        { transform: envPos(fx, fy, 0.5, 0) },
+        { transform: envPos(fx + 25, fy + (t.y - fy) * 0.35, 0.55, 22), offset: 0.3 },
+        { transform: envPos(fx - 20, fy + (t.y - fy) * 0.7, 0.55, -16), offset: 0.65 },
+        { transform: envPos(t.x, t.y - 20, 0.5, 0), offset: 0.85 },
+        { transform: envPos(t.x, t.y + 8, 0.45, 0), opacity: 0 }
+      ], { duration: 1500, easing: 'ease-in', fill: 'forwards' });
+      anims.push(drop);
+      drop.onfinish = () => {
+        envelope.style.opacity = 0;
+        mailbox.classList.add('bump');
+        timers.push(setTimeout(() => {
+          mailbox.className = 'full';
+          hint.classList.add('show');
+          state = 'waiting';
+        }, 400));
+      };
+    }, FLY_TIME * DROP_AT));
+  }
+
+  mailbox.addEventListener('click', () => {
+    if (state !== 'waiting') return;
+    state = 'opening';
+    mailbox.className = '';
+    hint.classList.remove('show');
+
+    // dopis vyskočí ze schránky doprostřed obrazovky
+    const t = center(slot);
+    const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+    envelope.style.opacity = 1;
+    const pop = envelope.animate([
+      { transform: envPos(t.x, t.y, 0.45, 0), opacity: 0 },
+      { transform: envPos(t.x, t.y - 80, 0.8, -10), opacity: 1, offset: 0.35 },
+      { transform: envPos(cx, cy, 1.5, 0), opacity: 1 }
+    ], { duration: 1000, easing: 'ease-out', fill: 'forwards' });
+    anims.push(pop);
+    pop.onfinish = () => {
+      envelope.classList.add('open');
+      timers.push(setTimeout(() => {
+        overlay.classList.add('show');
+        hearts();
+      }, 650));
+    };
+  });
+
+  function closeLetter() {
+    overlay.classList.remove('show');
+    anims.forEach(a => a.cancel());
+    envelope.className = '';
+    envelope.style.opacity = 0;
+    replay.classList.add('show');
+    state = 'done';
+  }
+  document.getElementById('close').addEventListener('click', closeLetter);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeLetter(); });
+  replay.addEventListener('click', start);
+
+  function hearts() {
+    const icons = ['❤️', '💕', '💖', '💗', '🌹'];
+    for (let i = 0; i < 28; i++) {
+      setTimeout(() => {
+        const h = document.createElement('div');
+        h.className = 'float-heart';
+        h.textContent = icons[Math.floor(Math.random() * icons.length)];
+        h.style.left = Math.random() * 100 + 'vw';
+        h.style.fontSize = (16 + Math.random() * 22) + 'px';
+        h.style.animationDuration = (4 + Math.random() * 3) + 's';
+        document.body.appendChild(h);
+        setTimeout(() => h.remove(), 7500);
+      }, i * 120);
+    }
+  }
+
+  start();
+</script>
+</body>
+</html>
