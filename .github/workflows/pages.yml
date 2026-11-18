@@ -3,7 +3,7 @@ name: Deploy Montana Cans site to GitHub Pages
 on:
   push:
     branches: [main]
-    paths: ['montana-cans/**', '.github/workflows/pages.yml']
+    paths: ['montana-cans/**', 'index.html', '.github/workflows/pages.yml']
   workflow_dispatch:
 
 permissions:
@@ -26,6 +26,6 @@ jobs:
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: montana-cans
+          path: .
       - id: deployment
         uses: actions/deploy-pages@v4

@@ -17,8 +17,8 @@ python3 -m http.server 8000   # http://localhost:8000
 Katalog se načítá přes `fetch`, takže otevření `index.html` přímo ze souboru nefunguje – je potřeba server.
 
 ## Nasazení
-Workflow `.github/workflows/pages.yml` nasadí složku `montana-cans/` na GitHub Pages při každém pushi do `main`.
-Jednorázově je potřeba v repozitáři zapnout **Settings → Pages → Source: GitHub Actions**.
+Web běží na https://davidsvitil.github.io/web/ (kořenový `index.html` přesměruje do `montana-cans/`). Funguje s oběma zdroji GitHub Pages – „Deploy from a branch“ (main, /root) i „GitHub Actions“ (workflow `.github/workflows/pages.yml`).
+Doporučeno: Settings → Pages → Source: **GitHub Actions** (jinak se nasazuje dvakrát).
 
 ## Struktura
 - `index.html` – kostra, pill navigace, košík
