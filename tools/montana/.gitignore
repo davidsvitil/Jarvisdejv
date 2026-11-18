@@ -1,0 +1,4 @@
+catalogue_raw.json
+jar_*.txt
+imgcache/
+__pycache__/
